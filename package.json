@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "fullstack-nodejs-mono-repo",
   "private": true,
   "scripts": {
     "build": "turbo run build",
