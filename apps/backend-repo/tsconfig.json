@@ -1,0 +1,16 @@
+{
+  "extends": "../../packages/typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "target": "es2017",
+    "lib": ["es2017"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": true,
+    "rootDir": "."
+  },
+  "include": ["config", "controller", "core", "entities", "middleware", "repository", "routes"],
+  "exclude": ["node_modules", "dist"]
+} 
