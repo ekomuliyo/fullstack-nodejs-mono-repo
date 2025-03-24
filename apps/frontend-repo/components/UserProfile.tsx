@@ -60,9 +60,14 @@ const UserProfile = () => {
   // Get initials for avatar
   const getInitials = () => {
     if (user?.name) {
-      return user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+      return user.name
+        .split(' ')
+        .map(n => n[0] || '')
+        .join('')
+        .toUpperCase();
     }
-    return user?.email ? user.email[0].toUpperCase() : 'U';
+  
+    return user?.email ? user.email.charAt(0).toUpperCase() : 'U';
   };
   
   // Format date for better display

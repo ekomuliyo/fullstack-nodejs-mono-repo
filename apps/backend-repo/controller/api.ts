@@ -1,16 +1,9 @@
 import { Request, Response } from 'express';
 import { getUserById, updateUser, createUserIfNotExists } from '../repository/userCollection';
-import { User } from 'shared';
-
-interface AuthRequest extends Request {
-  user?: {
-    uid: string;
-    email?: string;
-  };
-}
+import { User } from '../types/user';
 
 // Create user profile endpoint
-export const createUserProfile = async (req: AuthRequest, res: Response) => {
+export const createUserProfile = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const userData: Partial<User> = req.body;
@@ -22,14 +15,14 @@ export const createUserProfile = async (req: AuthRequest, res: Response) => {
     
     // Create or get the user profile
     const user = await createUserIfNotExists(
-      userId, 
-      userData.email || req.user.email
+      userId ?? '', 
+      userData.email || req.user?.email || ''
     );
     
     // If additional data was provided, update the user
     if (Object.keys(userData).length > 0) {
       const { id, createdAt, ...updatableData } = userData as any;
-      const updatedUser = await updateUser(userId, updatableData);
+      const updatedUser = await updateUser(userId ?? '', updatableData);
       return res.status(200).json(updatedUser);
     }
     
@@ -41,7 +34,7 @@ export const createUserProfile = async (req: AuthRequest, res: Response) => {
 };
 
 // Fetch user data endpoint
-export const fetchUserData = async (req: AuthRequest, res: Response) => {
+export const fetchUserData = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     
@@ -50,11 +43,11 @@ export const fetchUserData = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Unauthorized access' });
     }
     
-    const user = await getUserById(userId);
+    const user = await getUserById(userId ?? '');
     
     if (!user) {
       // If the user doesn't exist, automatically create it
-      const newUser = await createUserIfNotExists(userId, req.user.email);
+      const newUser = await createUserIfNotExists(userId ?? '', req.user?.email || '');
       return res.status(200).json(newUser);
     }
     
@@ -66,7 +59,7 @@ export const fetchUserData = async (req: AuthRequest, res: Response) => {
 };
 
 // Update user data endpoint
-export const updateUserData = async (req: AuthRequest, res: Response) => {
+export const updateUserData = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const userData: Partial<User> = req.body;
@@ -85,7 +78,7 @@ export const updateUserData = async (req: AuthRequest, res: Response) => {
     const { id, createdAt, ...updatableData } = userData as any;
     
     // Update the user
-    const updatedUser = await updateUser(userId, updatableData);
+    const updatedUser = await updateUser(userId ?? '', updatableData);
     
     res.status(200).json(updatedUser);
   } catch (error) {

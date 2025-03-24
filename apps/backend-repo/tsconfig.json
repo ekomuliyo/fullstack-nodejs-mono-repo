@@ -11,6 +11,6 @@
     "declaration": true,
     "rootDir": "."
   },
-  "include": ["config", "controller", "core", "entities", "middleware", "repository", "routes"],
+  "include": ["config", "controller", "core", "entities", "middleware", "repository", "routes", "types"],
   "exclude": ["node_modules", "dist"]
 } 

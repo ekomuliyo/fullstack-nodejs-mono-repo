@@ -1,18 +1,13 @@
 import { db } from '../config/firebaseConfig';
-import { User } from 'shared';
-
+import { User } from '../types/user';
+import * as admin from 'firebase-admin';
+import { DocumentData } from 'firebase-admin/firestore';
 const USERS_COLLECTION = 'USERS';
 
 // Remove or disable the mockUsers functionality since we're using real Firebase
 export const getUserById = async (userId: string): Promise<User | null> => {
   try {
-    // If using mock data, return from in-memory store
-    if (useMockData) {
-      console.log(`[MOCK] Getting user ${userId} from in-memory store`);
-      return mockUsers[userId] || await createUserIfNotExists(userId);
-    }
-    
-    // Otherwise, fetch from Firestore
+    // Fetch from Firestore
     console.log(`Getting user ${userId} from Firestore`);
     const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
     
@@ -45,7 +40,6 @@ export const createUserIfNotExists = async (userId: string, email?: string): Pro
       createdAt: Date.now(),
       updatedAt: Date.now(),
       name: 'New User',
-      // Remove potentialScore if it's not in your User interface
       preferences: {
         theme: 'light',
         notifications: true
@@ -103,9 +97,9 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
   }
 };
 
-export const getAllUsers = async (limit = 10, lastDoc?: FirebaseFirestore.DocumentSnapshot): Promise<{
+export const getAllUsers = async (limit = 10, lastDoc?: admin.firestore.DocumentSnapshot): Promise<{
   users: User[];
-  lastDoc: FirebaseFirestore.DocumentSnapshot | null;
+  lastDoc: admin.firestore.DocumentSnapshot | null;
 }> => {
   try {
     let query = db.collection(USERS_COLLECTION).orderBy('createdAt', 'desc').limit(limit);
@@ -117,7 +111,7 @@ export const getAllUsers = async (limit = 10, lastDoc?: FirebaseFirestore.Docume
     const snapshot = await query.get();
     const users: User[] = [];
     
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
       const userData = doc.data() as Omit<User, 'id'>;
       users.push({
         id: doc.id,
@@ -125,7 +119,9 @@ export const getAllUsers = async (limit = 10, lastDoc?: FirebaseFirestore.Docume
       });
     });
     
-    const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+    const newLastDoc = snapshot.docs.length > 0 
+      ? snapshot.docs[snapshot.docs.length - 1] as admin.firestore.DocumentSnapshot 
+      : null;
     
     return {
       users,
@@ -160,31 +156,31 @@ export const createUser = async (userId: string, userData: Omit<User, 'id'>): Pr
 
 // Query users with filters
 export const queryUsers = async (
-  filters: {field: string, operator: FirebaseFirestore.WhereFilterOp, value: any}[], 
+  filters: {field: string, operator: admin.firestore.WhereFilterOp, value: any}[], 
   limit = 10
 ): Promise<User[]> => {
   try {
-    let query = db.collection(USERS_COLLECTION);
-    
+    let query: admin.firestore.Query<DocumentData> = db.collection(USERS_COLLECTION);
+
     // Apply all filters
     filters.forEach(filter => {
       query = query.where(filter.field, filter.operator, filter.value);
     });
-    
+
     // Apply limit
     query = query.limit(limit);
-    
+
     const snapshot = await query.get();
     const users: User[] = [];
-    
-    snapshot.forEach(doc => {
+
+    snapshot.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
       const userData = doc.data() as Omit<User, 'id'>;
       users.push({
         id: doc.id,
         ...userData
       });
     });
-    
+
     return users;
   } catch (error) {
     console.error('Error querying users:', error);
@@ -192,18 +188,19 @@ export const queryUsers = async (
   }
 };
 
-export const getHighPotentialUsers = async (limit = 10, lastDoc?: FirebaseFirestore.DocumentSnapshot): Promise<{
+export const getHighPotentialUsers = async (limit = 10, lastDoc?: admin.firestore.DocumentSnapshot): Promise<{
   users: User[];
-  lastDoc: FirebaseFirestore.DocumentSnapshot | null;
+  lastDoc: admin.firestore.DocumentSnapshot | null;
 }> => {
   try {
-    // Create a composite score field to store in the database or compute on the fly
-    // This is a more efficient approach for Firebase pagination than just using multiple orderBy clauses
+    // Create a calculated score based on user activity and ratings
+    // We can use a combination of fields to determine high potential users
     
     let query = db.collection(USERS_COLLECTION)
-      // We'll query based on a pre-calculated potentialScore field
-      // This should be kept updated whenever user data changes
-      .orderBy('potentialScore', 'desc')
+      // We can order by multiple fields if potentialScore is not available
+      // For example: most active users with highest ratings
+      .orderBy('numberOfRents', 'desc')
+      .orderBy('totalAverageWeightRatings', 'desc')
       .limit(limit);
     
     if (lastDoc) {
@@ -213,7 +210,7 @@ export const getHighPotentialUsers = async (limit = 10, lastDoc?: FirebaseFirest
     const snapshot = await query.get();
     const users: User[] = [];
     
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
       const userData = doc.data() as Omit<User, 'id'>;
       users.push({
         id: doc.id,
@@ -221,7 +218,9 @@ export const getHighPotentialUsers = async (limit = 10, lastDoc?: FirebaseFirest
       });
     });
     
-    const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+    const newLastDoc = snapshot.docs.length > 0 
+      ? snapshot.docs[snapshot.docs.length - 1] as admin.firestore.DocumentSnapshot 
+      : null;
     
     return {
       users,

@@ -1,14 +1,16 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useDispatch } from 'react-redux';
 import { auth } from '../config/firebase';
 import { setUser } from '../store/authSlice';
 import { setAuthToken } from '../apis/userApi';
+import { Box, CircularProgress } from '@mui/material';
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const dispatch = useDispatch();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -35,11 +37,26 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         dispatch(setUser({ user: null, token: null }));
         setAuthToken('');
       }
+      setIsInitialized(true);
     });
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [dispatch]);
+
+  // Show loading state until auth is initialized
+  if (!isInitialized) {
+    return (
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return <>{children}</>;
 } 

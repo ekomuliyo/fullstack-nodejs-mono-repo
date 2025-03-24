@@ -3,7 +3,7 @@ import { User } from 'shared';
 import { fetchUserData, updateUserData } from '../apis/userApi';
 
 // Define the initial state
-interface UserState {
+export interface UserState {
   user: User | null;
   loading: boolean;
   error: string | null;

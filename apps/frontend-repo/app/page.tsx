@@ -8,15 +8,13 @@ import {
   Container, 
   Box, 
   Typography, 
-  Paper,
-  Button,
-  CircularProgress
+  Paper
 } from '@mui/material';
 import LoginForm from '../components/LoginForm';
 
 export default function Home() {
   const router = useRouter();
-  const { user, loading } = useSelector((state: RootState) => state.auth);
+  const { user } = useSelector((state: RootState) => state.auth);
   
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -24,19 +22,6 @@ export default function Home() {
       router.push('/dashboard');
     }
   }, [user, router]);
-  
-  if (loading) {
-    return (
-      <Box 
-        display="flex" 
-        justifyContent="center" 
-        alignItems="center" 
-        minHeight="100vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
   
   return (
     <Container maxWidth="lg">

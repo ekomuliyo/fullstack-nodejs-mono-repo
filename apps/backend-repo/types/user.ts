@@ -12,4 +12,4 @@ export interface User {
     theme?: string;
     notifications?: boolean;
   };
-} 
+}

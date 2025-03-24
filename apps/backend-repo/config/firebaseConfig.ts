@@ -1,67 +1,40 @@
 import * as admin from 'firebase-admin';
-import path from 'path';
-import fs from 'fs';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 dotenv.config();
 
-console.log('Initializing Firebase Admin SDK...');
-console.log(`Project ID: ${process.env.FIREBASE_PROJECT_ID}`);
-console.log(`Database URL: ${process.env.FIREBASE_DATABASE_URL}`);
-
-// Check if service account file exists
-const serviceAccountPath = path.resolve(__dirname, './credentials/serviceAccountKey.json');
-const serviceAccountExists = fs.existsSync(serviceAccountPath);
-
-if (!serviceAccountExists) {
-  console.error(`⚠️ Service account file not found at: ${serviceAccountPath}`);
-  console.error('Please download the service account key from Firebase Console and place it at the correct location.');
-}
-
-// Initialize Firebase if it hasn't been initialized yet
+// Initialize Firebase Admin
 if (!admin.apps.length) {
   try {
-    if (serviceAccountExists) {
-      console.log('Initializing Firebase with service account...');
-      
-      // Get the service account from file
-      const serviceAccount = require(serviceAccountPath);
-      
+    // Check if we have environment variables for credentials
+    if (process.env.FIREBASE_PRIVATE_KEY) {
+      // Use environment variables
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        databaseURL: process.env.FIREBASE_DATABASE_URL,
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          // The private key comes as a string with "\n" character literals
+          // We need to replace them with actual newlines
+          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        }),
+        databaseURL: process.env.FIREBASE_DATABASE_URL
       });
-      
-      console.log('✅ Firebase Admin SDK initialized successfully with service account');
     } else {
-      // Fallback initialization
-      console.log('Attempting fallback initialization with project ID only...');
-      
+      // Fallback to service account file for local development
+      const serviceAccountPath = path.resolve(__dirname, './serviceAccountKey.json');
       admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID,
+        credential: admin.credential.cert(serviceAccountPath),
+        databaseURL: process.env.FIREBASE_DATABASE_URL
       });
-      
-      console.log(`⚠️ Firebase initialized with limited credentials (project ID only)`);
     }
-    
-    // Test Firestore connection
-    console.log('Testing Firestore connection...');
-    admin.firestore().collection('_connection_test').doc('test').set({
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      message: 'Connection successful'
-    })
-    .then(() => {
-      console.log('✅ Successfully connected to Firestore');
-    })
-    .catch(error => {
-      console.error('❌ Failed to connect to Firestore:', error);
-    });
-    
+    console.log('Firebase Admin initialized successfully');
   } catch (error) {
-    console.error('❌ Firebase initialization error:', error);
+    console.error('Firebase admin initialization error', error);
   }
 }
 
+// Export Firestore, Auth, and Storage instances
 export const db = admin.firestore();
 export const auth = admin.auth();
-export default admin;
+export const storage = admin.storage(); 

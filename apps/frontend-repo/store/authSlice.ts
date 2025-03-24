@@ -9,7 +9,7 @@ import {
 import { auth } from '../config/firebase';
 import { setAuthToken, createUserProfile } from '../apis/userApi';
 
-interface AuthState {
+export interface AuthState {
   user: FirebaseUser | null;
   token: string | null;
   loading: boolean;

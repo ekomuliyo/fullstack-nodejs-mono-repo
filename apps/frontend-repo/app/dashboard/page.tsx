@@ -85,9 +85,14 @@ export default function Dashboard() {
   // Get user initials for avatar
   const getInitials = () => {
     if (user?.displayName) {
-      return user.displayName.split(' ').map(n => n[0]).join('').toUpperCase();
+      return user.displayName
+        .split(' ')
+        .map(n => n[0] || '')
+        .join('')
+        .toUpperCase();
     }
-    return user?.email ? user.email[0].toUpperCase() : 'U';
+    
+    return user?.email ? user.email.charAt(0).toUpperCase() : 'U';
   };
   
   return (
